@@ -1,0 +1,20 @@
+{
+  "uuid": "310ecf50-9965-4bb7-8409-9ecad9452b34",
+  "shortName": "spritesheetdemo",
+  "longName": "spritesheetdemo",
+  "companyName": "MakeAwesomeHappen",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": [
+      {  "type": "png",  "name": "MARIOSPRITESHEET",  "file": "images/mariospritesheet.png" }
+    ]
+  }
+}
