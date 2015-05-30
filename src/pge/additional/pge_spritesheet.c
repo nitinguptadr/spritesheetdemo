@@ -4,29 +4,36 @@ PGESpriteSheet* pge_spritesheet_create(int resource_id, int num_sets) {
   PGESpriteSheet *this = calloc(1, sizeof(PGESpriteSheet));
   if (!this) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to allocate sprite sheet");
-    return NULL;
+    goto cleanup;
   }
 
   // Allocate bitmap
   this->bitmap = gbitmap_create_with_resource(resource_id);
   if (!this->bitmap) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to create bitmap for spritesheet");
-    free(this);
-    return NULL;
+    goto cleanup;
   }
 
   this->sets = calloc(num_sets, sizeof(PGESpriteSet));
   if (!this->sets) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to sprite sets for sprite sheet");
-    gbitmap_destroy(this->bitmap);
-    free(this);
+    goto cleanup;
   }
 
   this->num_sets = num_sets;
 
-  GRect bounds = gbitmap_get_bounds(this->bitmap);
-
   return this;
+
+cleanup:
+  if (this) {
+    gbitmap_destroy(this->bitmap);
+    if (this->sets) {
+      free(this->sets);
+    }
+    free(this);
+  }
+
+  return NULL;
 }
 
 void pge_spritesheet_destroy(PGESpriteSheet *this) {
@@ -122,6 +129,15 @@ void pge_spritesheet_set_sprite_index(PGESpriteSheet *spritesheet, uint32_t set_
   spriteset->sprite_index = sprite_index;
 }
 
+GPoint pge_spritesheet_get_sprite_position(PGESpriteSheet *spritesheet, uint32_t set_index) {
+  if ((!spritesheet) || (!spritesheet->sets) || (set_index >= spritesheet->num_sets)) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Invalid params");
+    return GPointZero;
+  }
+
+  return spritesheet->sets[set_index].position;
+}
+
 void pge_spritesheet_set_sprite_position(PGESpriteSheet *spritesheet, uint32_t set_index, GPoint position) {
   if ((!spritesheet) || (!spritesheet->sets) || (set_index >= spritesheet->num_sets)) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Invalid params");
@@ -141,6 +157,19 @@ static GRect prv_get_sprite_frame(PGESpriteSet *spriteset) {
   sprite_frame.origin.y += row * (spriteset->sprite_size.h + spriteset->yspacing);
 
   return sprite_frame;
+}
+
+
+GRect pge_spritesheet_get_sprite_bounds(PGESpriteSheet *spritesheet, uint32_t set_index) {
+  if ((!spritesheet) || (!spritesheet->sets) || (set_index >= spritesheet->num_sets)) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Invalid params");
+    return GRectZero;
+  }
+
+  return GRect(spritesheet->sets[set_index].position.x,
+               spritesheet->sets[set_index].position.y,
+               spritesheet->sets[set_index].sprite_size.w,
+               spritesheet->sets[set_index].sprite_size.h);
 }
 
 void pge_spritesheet_draw(GContext *ctx, PGESpriteSheet *spritesheet, uint32_t set_index) {

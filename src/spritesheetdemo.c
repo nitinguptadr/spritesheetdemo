@@ -94,14 +94,14 @@ void pge_init() {
   s_num_sprites[INDEX_SMALL_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO);
   pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO, GPoint(40, 100));
 
-  // Demonstrate vertical spacing and horizontal spacing
-  // Note image will be cut off horizontally since there is no actual spacing between sprites - this simulates the spacing
-  pge_spritesheet_add_set(s_spritesheet, GRect(80, 48, 336, 64+16), GSize(12, 32), 4, 16);
+  // Demonstrate vertical spacing
+  pge_spritesheet_add_set(s_spritesheet, GRect(80, 48, 336, 64+16), GSize(16, 32), 0, 16);
   s_num_sprites[INDEX_OTHER_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_OTHER_MARIO);
   pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_OTHER_MARIO, GPoint(40, 130));
 
   // Demonstrate horizontal spacing
-  // Note image will be cut off horizontally since there is no actual spacing between sprites - this simulates the spacing
+  // Note image will be cut off horizontally since there is no actual spacing between sprites,
+  // This simulates the spacing
   pge_spritesheet_add_set(s_spritesheet, GRect(80, 128, 224, 16), GSize(8, 16), 8, 0);
   s_num_sprites[INDEX_SMALL_MARIO2] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO2);
   pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO2, GPoint(100, 130));
