@@ -3,6 +3,8 @@
 #include <pebble.h>
 #include "pge/additional/pge_sprite.h"
 
+typedef uint32_t PGESpriteTableHandle;
+
 // Sprite Set - This is a collection of sprites images for a given set. For example, if you have an 
 // animated sprite that is split into 16 sprites, then that set of 16 sprites can be grouped as one
 // PGESpriteSet so long as they are arranged consecutively in the sprite sheet. The sprites must be
@@ -94,3 +96,11 @@ void pge_spritesheet_draw(GContext *ctx, PGESpriteSheet *spritesheet, uint32_t s
 //! @return The number of sprites in a given PGESpriteSet pointed to by set_index
 uint32_t pge_spritesheet_get_num_sprites(PGESpriteSheet *spritesheet, uint32_t set_index);
 
+//! Loads a sprite table into memory
+//! @param resource_id Resource ID corresponding to the sprite data table
+//! @return Handle to be used to reference the sprite data table
+PGESpriteTableHandle pge_spritesheet_load_table(int resource_id);
+
+PGESprite* pge_spritesheet_create_sprite(PGESpriteTableHandle handle, char *tile_name, uint32_t tile_local_id, GPoint position);
+
+void pge_spritesheet_set_anim_frame(PGESprite *this, PGESpriteTableHandle handle, char *tile_name, uint32_t tile_local_id);

@@ -20,6 +20,8 @@ typedef struct {
  */
 PGESprite* pge_sprite_create(GPoint position, int initial_resource_id);
 
+PGESprite* pge_sprite_create_from_png_data(GPoint position, const uint8_t * png_data, size_t png_data_size);
+
 /**
  * Destroy a sprite object
  */

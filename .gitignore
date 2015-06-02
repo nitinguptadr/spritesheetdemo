@@ -3,3 +3,5 @@
 build
 .lock*
 spritesheetdemo.v*
+
+*.pyc

@@ -1,3 +1,4 @@
+#include <pebble.h>
 #include "pge_sprite.h"
 #include "pge_collision.h"
 
@@ -12,8 +13,27 @@ PGESprite* pge_sprite_create(GPoint position, int initial_resource_id) {
   return this;
 }
 
+PGESprite* pge_sprite_create_from_png_data(GPoint position, const uint8_t * png_data, size_t png_data_size) {
+#ifdef PBL_PLATFORM_BASALT
+  PGESprite *this = malloc(sizeof(PGESprite));
+
+  // Allocate
+  this->bitmap = gbitmap_create_from_png_data(png_data, png_data_size);
+  if (this->bitmap == NULL) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Could not create bitmap");
+  }
+  this->position = position;
+
+  // Finally
+  return this;
+#else
+  return NULL;
+#endif
+}
+
 void pge_sprite_destroy(PGESprite *this) {
   gbitmap_destroy(this->bitmap);
+  this->bitmap = NULL;
 
   free(this);
 }

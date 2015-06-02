@@ -15,6 +15,12 @@ PGESpriteSheet *s_spritesheet;
 uint32_t s_mario_spritesets[NUM_MARIO_SPRITESETS];
 uint32_t s_num_sprites[NUM_MARIO_SPRITESETS];
 bool auto_increment = false;
+PGESprite* mario_large;
+PGESprite* mario_small;
+PGESprite* mario_large2;
+PGESprite* mario_small2;
+PGESpriteTableHandle sth;
+uint32_t mario_index = 0;
 
 // Increment or decrement the sprite_index for a given PGESpriteSet pointed to by set_index.
 // Wrap around if reached 0 or the number of sprites in a set.
@@ -45,14 +51,28 @@ void draw(GContext *ctx) {
     update_index(true, INDEX_SMALL_MARIO);
     update_index(true, INDEX_OTHER_MARIO);
     update_index(true, INDEX_SMALL_MARIO2);
+
+    mario_index = (mario_index + 1) % 14;
+    pge_spritesheet_set_anim_frame(mario_large, sth, "mario_large", mario_index);
+    pge_spritesheet_set_anim_frame(mario_small, sth, "mario_small", mario_index);
+    pge_spritesheet_set_anim_frame(mario_large2, sth, "mario_large2", mario_index);
+    pge_spritesheet_set_anim_frame(mario_small2, sth, "mario_small2", mario_index);
   }
 
   // Draw each sprite
   graphics_context_set_compositing_mode(ctx, GCompOpSet);
+
+  pge_sprite_draw(mario_large, ctx);
+  pge_sprite_draw(mario_small, ctx);
+  pge_sprite_draw(mario_large2, ctx);
+  pge_sprite_draw(mario_small2, ctx);
+
+//#if 0
   pge_spritesheet_draw(ctx, s_spritesheet, INDEX_BIG_MARIO);
   pge_spritesheet_draw(ctx, s_spritesheet, INDEX_SMALL_MARIO);
   pge_spritesheet_draw(ctx, s_spritesheet, INDEX_OTHER_MARIO);
   pge_spritesheet_draw(ctx, s_spritesheet, INDEX_SMALL_MARIO2);
+//#endif
 }
 
 // Optional, can be NULL if only using pge_get_button_state()
@@ -86,25 +106,32 @@ void pge_init() {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to create spritesheet");
   }
 
+  sth = pge_spritesheet_load_table(RESOURCE_ID_MARIOSPRITESHEET_DAT);
+
+  mario_large = pge_spritesheet_create_sprite(sth, "mario_large", 1, GPoint(40, 10));
+  mario_small = pge_spritesheet_create_sprite(sth, "mario_small", 1, GPoint(40, 100));
+  mario_large2 = pge_spritesheet_create_sprite(sth, "mario_large2", 1, GPoint(40, 130));
+  mario_small2 = pge_spritesheet_create_sprite(sth, "mario_small2", 1, GPoint(100, 130));
+
   pge_spritesheet_add_set(s_spritesheet, GRect(80, 0, 336, 32), GSize(16, 32), 0, 0);
   s_num_sprites[INDEX_BIG_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_BIG_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_BIG_MARIO, GPoint(40, 10));
+  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_BIG_MARIO, GPoint(80, 10));
 
   pge_spritesheet_add_set(s_spritesheet, GRect(80, 32, 224, 16), GSize(16, 16), 0, 0);
   s_num_sprites[INDEX_SMALL_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO, GPoint(40, 100));
+  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO, GPoint(80, 100));
 
   // Demonstrate vertical spacing
   pge_spritesheet_add_set(s_spritesheet, GRect(80, 48, 336, 64+16), GSize(16, 32), 0, 16);
   s_num_sprites[INDEX_OTHER_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_OTHER_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_OTHER_MARIO, GPoint(40, 130));
+  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_OTHER_MARIO, GPoint(80, 130));
 
   // Demonstrate horizontal spacing
   // Note image will be cut off horizontally since there is no actual spacing between sprites,
   // This simulates the spacing
   pge_spritesheet_add_set(s_spritesheet, GRect(80, 128, 224, 16), GSize(8, 16), 8, 0);
   s_num_sprites[INDEX_SMALL_MARIO2] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO2);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO2, GPoint(100, 130));
+  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO2, GPoint(100, 90));
 }
 
 void pge_deinit() {
