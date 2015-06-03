@@ -49,7 +49,7 @@ class SpriteTable(object):
         f.write(png_file.read())
     f.close()
 
-def parse_and_build_spritesheet (tmx_file):
+def parse_and_build_spritesheet (tmx_file, args):
   world_map = tmxparser.TileMapParser().parse_decode(tmx_file)
   concat_filename = os.path.splitext(tmx_file)[0] + ".png.dat"
   spritesheet_filename = os.path.splitext(tmx_file)[0] + ".dat"
@@ -98,13 +98,14 @@ def parse_and_build_spritesheet (tmx_file):
 
         crop_box = [tileoffset.x + (((int(tileset.tilewidth) + xspacing) * x)),
                     tileoffset.y + (((int(tileset.tileheight) + yspacing) * y)),
-                    tileoffset.x + (((int(tileset.tilewidth) + xspacing) * (x+1))),
-                    tileoffset.y + (((int(tileset.tileheight) + yspacing) * (y+1)))]
+                    tileoffset.x + (((int(tileset.tilewidth) + xspacing) * (x+1)) - xspacing),
+                    tileoffset.y + (((int(tileset.tileheight) + yspacing) * (y+1)) - yspacing)]
         cropped_filename = tileset.name + "_" + str(imagenum) + ".png"
         cropped_filename_converted = tileset.name + "_" + str(imagenum) + "-conv.png"
         print "  Tile " + str(imagenum) + ": " + cropped_filename
         temp_files.append(cropped_filename)
-        temp_files.append(cropped_filename_converted)
+        if not args.keep_tempfiles:
+          temp_files.append(cropped_filename_converted)
         cropped_image = base_image.crop(crop_box)
         cropped_image.save(cropped_filename)
         png2pblpng.convert_png_to_pebble_png(cropped_filename,cropped_filename_converted)
@@ -138,8 +139,9 @@ def parse_and_build_spritesheet (tmx_file):
 
 parser = argparse.ArgumentParser(description='Create PNG data file for a sprite sheet')
 parser.add_argument('-tmx', '--tmx', dest='tmx_file', nargs="*", required=True, help='TMX filepath')
+parser.add_argument('-tempfiles', '--tempfiles', dest='keep_tempfiles', action='store_true', default=False, help='Keep temp files')
 args = parser.parse_args()
 
 for tmx_file in args.tmx_file:
-  parse_and_build_spritesheet(tmx_file)
+  parse_and_build_spritesheet(tmx_file, args)
 

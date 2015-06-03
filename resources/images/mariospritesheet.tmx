@@ -2,30 +2,30 @@
 <map version="1.0">
   <tileset firstgid="1" name="mario_large" tilewidth="16" tileheight="32">
     <tileoffset x="80" y="0"/>
-    <image source="mariospritesheet.png" width="21" height="1"/>
+    <image source="mariospritesheet_full.png" width="21" height="1"/>
   </tileset>
   <tileset firstgid="22" name="mario_small" tilewidth="16" tileheight="16">
+    <tileoffset x="80" y="32"/>
     <properties>
       <property name="xspacing" value="0"/>
       <property name="yspacing" value="0"/>
     </properties>
-    <tileoffset x="80" y="32"/>
-    <image source="mariospritesheet.png" width="14" height="1"/>
+    <image source="mariospritesheet_full.png" width="14" height="1"/>
   </tileset>
   <tileset firstgid="36" name="mario_large2" tilewidth="16" tileheight="32">
+    <tileoffset x="80" y="48"/>
     <properties>
       <property name="xspacing" value="0"/>
       <property name="yspacing" value="16"/>
     </properties>
-    <tileoffset x="80" y="48"/>
-    <image source="mariospritesheet.png" width="21" height="2"/>
+    <image source="mariospritesheet_full.png" width="21" height="2"/>
   </tileset>
-  <tileset firstgid="78" name="mario_small2" tilewidth="8" tileheight="16">
+  <tileset firstgid="78" name="mario_small2" tilewidth="16" tileheight="16">
+    <tileoffset x="80" y="128"/>
     <properties>
-      <property name="xspacing" value="8"/>
+      <property name="xspacing" value="0"/>
       <property name="yspacing" value="0"/>
     </properties>
-    <tileoffset x="80" y="128"/>
-    <image source="mariospritesheet.png" width="14" height="1"/>
+    <image source="mariospritesheet_full.png" width="14" height="1"/>
   </tileset>
 </map>
