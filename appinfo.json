@@ -15,7 +15,8 @@
   "resources": {
     "media": [
       {  "type": "png",  "name": "MARIOSPRITESHEET",  "file": "images/mariospritesheet.png" },
-      {  "type": "raw",  "name": "MARIOSPRITESHEET_DAT",  "file": "images/mariospritesheet.dat" }
+      {  "type": "raw",  "name": "MARIOSPRITESHEET_TILESETS",  "file": "images/mariospritesheet_tilesets.dat" },
+      {  "type": "raw",  "name": "MARIOSPRITESHEET_TILESHEET0",  "file": "images/mariospritesheet_tilesheet0.dat" }
     ]
   }
 }

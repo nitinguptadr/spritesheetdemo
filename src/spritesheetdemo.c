@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "pge/pge.h"
 #include "pge/additional/pge_spritesheet.h"
+#include "pge/additional/pge_tilesheet.h"
 
 #define NUM_MARIO_SPRITESETS 6
 #define INDEX_BIG_MARIO      0
@@ -16,11 +17,17 @@ uint32_t s_mario_spritesets[NUM_MARIO_SPRITESETS];
 uint32_t s_num_sprites[NUM_MARIO_SPRITESETS];
 bool auto_increment = false;
 PGESprite* mario_large;
-PGESprite* mario_small;
-PGESprite* mario_large2;
-PGESprite* mario_small2;
 PGESpriteTableHandle sth;
 uint32_t mario_index = 0;
+bool anim_forward = true;
+
+PGESprite* bush1;
+PGESprite* bush2;
+PGESprite* bush3;
+PGESprite* cloud;
+
+PGETileSheetHandle s_tilesheet_handle;
+GSize s_tilesheet_size;
 
 // Increment or decrement the sprite_index for a given PGESpriteSet pointed to by set_index.
 // Wrap around if reached 0 or the number of sprites in a set.
@@ -41,54 +48,125 @@ static void update_index(bool increment, uint32_t set_index) {
   }
 }
 
+static int16_t ground_position = 16;
+
+typedef enum {
+  JUMP_STATE_NONE,
+  JUMP_STATE_UP,
+  JUMP_STATE_TOP,
+  JUMP_STATE_DOWN
+} JumpState;
+
+static JumpState jump_state = JUMP_STATE_NONE;
+#define INITIAL_MARIO_POSITION (GPoint(40, 168-32-32))
+static GPoint mario_position = {40, 168-32-32};
+static GPoint bush_position;
+static GPoint cloud_position;
+static uint32_t top_count = 0;
+
 void logic() {
 }
 
+//bush - 11, 8 and 12, 8
+
 void draw(GContext *ctx) {
   if (auto_increment) {
-    // Automatically increment the sprite index for each set
-    update_index(true, INDEX_BIG_MARIO);
-    update_index(true, INDEX_SMALL_MARIO);
-    update_index(true, INDEX_OTHER_MARIO);
-    update_index(true, INDEX_SMALL_MARIO2);
+    ground_position -= 4;
+    if (ground_position == 0) {
+      ground_position = 16;
+    }
+    bush_position.x -= 4;
+    if (bush_position.x == -40) {
+      bush_position.x = 144;
+    }
 
-    mario_index = (mario_index + 1) % 14;
-    pge_spritesheet_set_anim_frame(mario_large, sth, "mario_large", mario_index);
-    pge_spritesheet_set_anim_frame(mario_small, sth, "mario_small", mario_index);
-    pge_spritesheet_set_anim_frame(mario_large2, sth, "mario_large2", mario_index);
-    pge_spritesheet_set_anim_frame(mario_small2, sth, "mario_small2", mario_index);
+    cloud_position.x -= 4;
+    if (cloud_position.x == -96) {
+      cloud_position.x = 144;
+    }
   }
+
+  if (auto_increment) {
+    if (jump_state == JUMP_STATE_NONE) {
+      if (anim_forward) {
+        mario_index++;
+        if (mario_index == 4) {
+          anim_forward = !anim_forward;
+        }
+      } else {
+        mario_index--;
+        if (mario_index == 2) {
+          anim_forward = !anim_forward;
+        }
+      }
+    }
+  } else if (jump_state == JUMP_STATE_NONE) {
+    mario_index = 1;
+  }
+
+  if (jump_state == JUMP_STATE_UP) {
+      mario_position.y -= 4;
+      if (mario_position.y == INITIAL_MARIO_POSITION.y - 40) {
+        jump_state = JUMP_STATE_TOP;
+      }
+  } else if (jump_state == JUMP_STATE_TOP) {
+    if (top_count++ > 4) {
+      top_count = 0;
+      jump_state = JUMP_STATE_DOWN;
+    }
+  } else if (jump_state == JUMP_STATE_DOWN) {
+    mario_position.y += 4;
+    if (mario_position.y == INITIAL_MARIO_POSITION.y) {
+      jump_state = JUMP_STATE_NONE;
+      mario_index = 3;
+      anim_forward = true;
+    }
+  }
+
+  pge_sprite_set_position(mario_large, mario_position);
+  pge_spritesheet_set_anim_frame(mario_large, sth, "mario_large", mario_index);
+
+#ifdef PBL_PLATFORM_BASALT
+  graphics_context_set_fill_color(ctx, GColorVividCerulean);
+  graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+#endif
 
   // Draw each sprite
   graphics_context_set_compositing_mode(ctx, GCompOpSet);
 
-  pge_sprite_draw(mario_large, ctx);
-  pge_sprite_draw(mario_small, ctx);
-  pge_sprite_draw(mario_large2, ctx);
-  pge_sprite_draw(mario_small2, ctx);
+  GPoint draw_bush_position = bush_position;
+  pge_sprite_set_position(bush1, draw_bush_position);
+  pge_sprite_draw(bush1, ctx);
 
-//#if 0
-  pge_spritesheet_draw(ctx, s_spritesheet, INDEX_BIG_MARIO);
-  pge_spritesheet_draw(ctx, s_spritesheet, INDEX_SMALL_MARIO);
-  pge_spritesheet_draw(ctx, s_spritesheet, INDEX_OTHER_MARIO);
-  pge_spritesheet_draw(ctx, s_spritesheet, INDEX_SMALL_MARIO2);
-//#endif
+  draw_bush_position.x += 16;
+  pge_sprite_set_position(bush2, draw_bush_position);
+  pge_sprite_draw(bush2, ctx);
+
+  draw_bush_position.x += 16;
+  pge_sprite_set_position(bush3, draw_bush_position);
+  pge_sprite_draw(bush3, ctx);
+
+
+  GPoint draw_cloud_position = cloud_position;
+  pge_sprite_set_position(cloud, draw_cloud_position);
+  pge_sprite_draw(cloud, ctx);
+  draw_cloud_position.x += 36;
+  draw_cloud_position.y += 24;
+  pge_sprite_set_position(cloud, draw_cloud_position);
+  pge_sprite_draw(cloud, ctx);
+
+  pge_sprite_draw(mario_large, ctx);
+
+  pge_tilesheet_draw_grid(ctx, s_tilesheet_handle, GRect(0, 0, s_tilesheet_size.w, s_tilesheet_size.h), GPoint((ground_position - 16), 168-32), GSize(16, 16));
 }
 
 // Optional, can be NULL if only using pge_get_button_state()
 void click(int button_id, bool long_click) {
-  if (button_id == BUTTON_ID_UP) {
-    // Increment the sprite index for each set
-    update_index(true, INDEX_BIG_MARIO);
-    update_index(true, INDEX_SMALL_MARIO);
-    update_index(true, INDEX_OTHER_MARIO);
-    update_index(true, INDEX_SMALL_MARIO2);
+  if ((button_id == BUTTON_ID_UP) && (jump_state == JUMP_STATE_NONE)) {
+    mario_index = 15;
+    jump_state = JUMP_STATE_UP;
+    anim_forward = false;
   } else if (button_id == BUTTON_ID_DOWN) {
-    // Decrement the sprite index for each set
-    update_index(false, INDEX_BIG_MARIO);
-    update_index(false, INDEX_SMALL_MARIO);
-    update_index(false, INDEX_OTHER_MARIO);
-    update_index(false, INDEX_SMALL_MARIO2);
   } else if (button_id == BUTTON_ID_SELECT) {
     auto_increment = !auto_increment;
   }
@@ -97,7 +175,7 @@ void click(int button_id, bool long_click) {
 void pge_init() {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Begin game");
   s_window = pge_begin(GColorBlack, logic, draw, click);
-  pge_set_framerate(8);
+  pge_set_framerate(20);
   s_spritesheet = pge_spritesheet_create(RESOURCE_ID_MARIOSPRITESHEET, NUM_MARIO_SPRITESETS);
 
   if (s_spritesheet) {
@@ -106,32 +184,26 @@ void pge_init() {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to create spritesheet");
   }
 
-  sth = pge_spritesheet_load_table(RESOURCE_ID_MARIOSPRITESHEET_DAT);
+  sth = pge_spritesheet_load_table(RESOURCE_ID_MARIOSPRITESHEET_TILESETS);
+  s_tilesheet_handle = pge_tilesheet_create(RESOURCE_ID_MARIOSPRITESHEET_TILESHEET0, sth);
+  if (!s_tilesheet_handle) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "ERROR: Unable to create tilesheet");
+  }
+  mario_index = 2;
+  mario_large = pge_spritesheet_create_sprite(sth, "mario_large", mario_index, INITIAL_MARIO_POSITION);
+  anim_forward = true;
 
-  mario_large = pge_spritesheet_create_sprite(sth, "mario_large", 1, GPoint(40, 10));
-  mario_small = pge_spritesheet_create_sprite(sth, "mario_small", 1, GPoint(40, 100));
-  mario_large2 = pge_spritesheet_create_sprite(sth, "mario_large2", 1, GPoint(40, 130));
-  mario_small2 = pge_spritesheet_create_sprite(sth, "mario_small2", 1, GPoint(100, 130));
+  bush_position = GPoint(80, INITIAL_MARIO_POSITION.y + 16);
+  bush1 = pge_spritesheet_create_sprite(sth, "mariotiles", 9*33 + 14 - 2, bush_position);
+  bush_position.x += 16;
+  bush2 = pge_spritesheet_create_sprite(sth, "mariotiles", 9*33 + 14 - 1, bush_position);
+  bush_position.x += 16;
+  bush3 = pge_spritesheet_create_sprite(sth, "mariotiles", 9*33 + 14, bush_position);
 
-  pge_spritesheet_add_set(s_spritesheet, GRect(80, 0, 336, 32), GSize(16, 32), 0, 0);
-  s_num_sprites[INDEX_BIG_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_BIG_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_BIG_MARIO, GPoint(80, 10));
+  cloud_position = GPoint(20, 10);
+  cloud = pge_spritesheet_create_sprite(sth, "cloud", 1, cloud_position);
 
-  pge_spritesheet_add_set(s_spritesheet, GRect(80, 32, 224, 16), GSize(16, 16), 0, 0);
-  s_num_sprites[INDEX_SMALL_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO, GPoint(80, 100));
-
-  // Demonstrate vertical spacing
-  pge_spritesheet_add_set(s_spritesheet, GRect(80, 48, 336, 64+16), GSize(16, 32), 0, 16);
-  s_num_sprites[INDEX_OTHER_MARIO] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_OTHER_MARIO);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_OTHER_MARIO, GPoint(80, 130));
-
-  // Demonstrate horizontal spacing
-  // Note image will be cut off horizontally since there is no actual spacing between sprites,
-  // This simulates the spacing
-  pge_spritesheet_add_set(s_spritesheet, GRect(80, 128, 224, 16), GSize(8, 16), 8, 0);
-  s_num_sprites[INDEX_SMALL_MARIO2] = pge_spritesheet_get_num_sprites(s_spritesheet, INDEX_SMALL_MARIO2);
-  pge_spritesheet_set_sprite_position(s_spritesheet, INDEX_SMALL_MARIO2, GPoint(100, 90));
+  s_tilesheet_size = pge_tilesheet_get_tilesheet_size(s_tilesheet_handle);
 }
 
 void pge_deinit() {

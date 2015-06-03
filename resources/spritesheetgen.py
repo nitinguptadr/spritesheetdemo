@@ -5,17 +5,20 @@ import os
 import argparse
 import png2pblpng
 
+SPRITESHEETGEN_VERSION = 1
+
 class TableEntry(object):
   def __init__(self):
     self.tile_name = str("")
     self.tile_local_id = 0
+    self.tile_global_id = 0
     self.tile_png_offset = 0
     self.tile_png_size = 0
 
 class SpriteTable(object):
   def __init__(self, path):
     self.path = path
-    self.version = 1
+    self.version = SPRITESHEETGEN_VERSION
     self.filesize = 16 # currently 4 entries in the header of 4 bytes each
     self.header = []
     self.table_entries_size = 0
@@ -30,11 +33,12 @@ class SpriteTable(object):
     self.header = ''.join(header)
 
   def add_table_entries (self, table_entry):
-    self.table_entries.append(struct.pack("<20s",table_entry.tile_name))
+    self.table_entries.append(struct.pack("<16s",table_entry.tile_name))
     self.table_entries.append(struct.pack("<I", table_entry.tile_local_id))
+    self.table_entries.append(struct.pack("<I", table_entry.tile_global_id))
     self.table_entries.append(struct.pack("<I", table_entry.tile_png_offset))
     self.table_entries.append(struct.pack("<I", table_entry.tile_png_size))
-    self.table_entries_size += 32 # 20 bytes for name, 12 bytes for other
+    self.table_entries_size += 32 # 16 bytes for name, 16 bytes for other
     self.filesize += 32 + table_entry.tile_png_size
 
   def pack_png_entries (self):
@@ -52,13 +56,15 @@ class SpriteTable(object):
 def parse_and_build_spritesheet (tmx_file, args):
   world_map = tmxparser.TileMapParser().parse_decode(tmx_file)
   concat_filename = os.path.splitext(tmx_file)[0] + ".png.dat"
-  spritesheet_filename = os.path.splitext(tmx_file)[0] + ".dat"
-  open(concat_filename, 'wb').close()
-  sprite_table = SpriteTable(tmx_file)
-  png_offset = 0
+  tilesets_filename = os.path.splitext(tmx_file)[0] + "_tilesets.dat"
   temp_files = []
-  temp_files.append(concat_filename)
+  sprite_table = SpriteTable(tmx_file)
 
+  ### Build Tilesets Data File
+  open(concat_filename, 'wb').close()
+  png_offset = 0
+  temp_files.append(concat_filename)
+  ## BEGIN PARSE TILESETS
   for tileset in world_map.tile_sets:
     tileoffset = tmxparser.TileOffset()
     if tileset.tileoffsets:
@@ -114,9 +120,10 @@ def parse_and_build_spritesheet (tmx_file, args):
         table_entry = TableEntry()
         table_entry.tile_name = tileset.name.encode('ascii', 'ignore')
         table_entry.tile_local_id = imagenum
+        table_entry.tile_global_id = int(tileset.firstgid) + imagenum - 1
         table_entry.tile_png_offset = png_offset
         table_entry.tile_png_size = os.stat(cropped_filename_converted).st_size
-        padding = (16 - (table_entry.tile_png_size % 16))
+        padding = (16 - (table_entry.tile_png_size % 16)) ## Ensure alignment of PNG file is at 16 byte boundary
         png_offset += table_entry.tile_png_size + padding
 
         sprite_table.add_table_entries(table_entry)
@@ -127,10 +134,29 @@ def parse_and_build_spritesheet (tmx_file, args):
           byte = struct.pack("<c", '\0')
           concat_file.write(byte)
         concat_file.close()
+  ## END PARSE TILESETS
 
+  print "Creating sprite tilesets: " + tilesets_filename
+  sprite_table.write_table(tilesets_filename, concat_filename)
 
-  print "Creating sprite data table: " + spritesheet_filename
-  sprite_table.write_table(spritesheet_filename, concat_filename)
+  ### Build Tilesheets for each layer
+  layer_num = 0
+  for layer in world_map.layers:
+    tilesheet_filename = os.path.splitext(tmx_file)[0] + "_tilesheet" + str(layer_num) + ".dat"
+    tilesheet_file = open(tilesheet_filename, 'wb')
+    header = []
+    filesize = 16 + (4 * layer.width * layer.height) # 16 byte header + 4 bytes per coordinate 
+    header.append(struct.pack("<I", SPRITESHEETGEN_VERSION))
+    header.append(struct.pack("<I", filesize))     # file size in bytes
+    header.append(struct.pack("<I", layer.width))  # width in tiles
+    header.append(struct.pack("<I", layer.height)) # height in tiles
+    tilesheet_file.write(''.join(header))
+    gid_list = []
+    for gid in layer.decoded_content:
+      gid_list.append(struct.pack("<I", gid))
+
+    tilesheet_file.write(''.join(gid_list))
+    tilesheet_file.close()
 
   print "Cleaning up temp files"
   for temp_file in temp_files:

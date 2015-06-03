@@ -1,10 +1,11 @@
 #include <pebble.h>
 #include "pge_spritesheet.h"
 
-#define TILE_NAME_MAX_SIZE 20
+#define TILE_NAME_MAX_SIZE 16
 typedef struct {
   char tile_name[TILE_NAME_MAX_SIZE];
   uint32_t tile_local_id;
+  uint32_t tile_global_id;
   uint32_t tile_png_offset;
   uint32_t tile_png_size;
 } PGESpriteTableEntry;
@@ -248,9 +249,11 @@ PGESpriteTableHandle pge_spritesheet_load_table(int resource_id) {
   uint32_t table_entries_size = sprite_table->header.table_entries_size;
   sprite_table->table_entries = malloc(table_entries_size);
   if (!sprite_table->table_entries) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Could not allocate for table entries");
     goto cleanup;
   }
   if (resource_load_byte_range(rh, header_size, (uint8_t*)&sprite_table->table_entries[0], table_entries_size) != table_entries_size) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Could not load table entries from resources");
     goto cleanup;
   }
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Loaded sprite table entries %ld %ld %ld", sprite_table->table_entries[0].tile_local_id, sprite_table->table_entries[0].tile_png_offset, sprite_table->table_entries[0].tile_png_size);
@@ -287,23 +290,66 @@ static PGESpriteTableEntry* prv_find_table_entry(PGESpriteTableHandle handle, ch
   return table_entry;
 }
 
+static PGESpriteTableEntry* prv_find_table_entry_gid(PGESpriteTableHandle handle, uint32_t tile_global_id) {
+  PGESpriteTableEntry *table_entry = NULL;
+  PGESpriteTable *sprite_table = (PGESpriteTable *)handle;
+  uint32_t num_entries = sprite_table->header.table_entries_size / sizeof(PGESpriteTableEntry);
+
+//  APP_LOG(APP_LOG_LEVEL_ERROR, "num_entries %ld", num_entries);
+  for (uint32_t index = 0; index < num_entries; index++) {
+//    APP_LOG(APP_LOG_LEVEL_ERROR, "tile_global_id[%ld] %ld", index, sprite_table->table_entries[index].tile_global_id);
+    if (sprite_table->table_entries[index].tile_global_id == tile_global_id) {
+      table_entry = &sprite_table->table_entries[index];
+      break;
+    }
+  }
+
+  return table_entry;
+}
+
 PGESprite* pge_spritesheet_create_sprite(PGESpriteTableHandle handle, char *tile_name, uint32_t tile_local_id, GPoint position) {
   PGESprite *sprite = NULL;
 #ifdef PBL_PLATFORM_BASALT
   PGESpriteTable *sprite_table = (PGESpriteTable *)handle;
   PGESpriteTableEntry *table_entry = prv_find_table_entry(handle, tile_name, tile_local_id);
   if (table_entry) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Found table entry %s %ld %ld %ld", table_entry->tile_name, table_entry->tile_local_id, table_entry->tile_png_offset, table_entry->tile_png_size);
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "Found table entry %s %ld %ld %ld", table_entry->tile_name, table_entry->tile_local_id, table_entry->tile_png_offset, table_entry->tile_png_size);
     uint8_t *png_data = malloc(table_entry->tile_png_size);
     uint32_t file_offset = sizeof(PGESpriteTableHeader) + sprite_table->header.table_entries_size + table_entry->tile_png_offset;
     ResHandle rh = resource_get_handle(sprite_table->resource_id);
     if (png_data && (resource_load_byte_range(rh, file_offset, (uint8_t*)png_data, table_entry->tile_png_size) == table_entry->tile_png_size)) {
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Creating sprite: %s, id: %ld, offset: %ld, size: %ld", table_entry->tile_name, table_entry->tile_local_id, table_entry->tile_png_offset, table_entry->tile_png_size);
+      //APP_LOG(APP_LOG_LEVEL_DEBUG, "Creating sprite: %s, id: %ld, offset: %ld, size: %ld", table_entry->tile_name, table_entry->tile_local_id, table_entry->tile_png_offset, table_entry->tile_png_size);
       sprite = pge_sprite_create_from_png_data(position, png_data, table_entry->tile_png_size);
       free(png_data);
     } else if (png_data) {
       free(png_data);
     }
+  } else {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to find table entry for tile local id %ld, %s", tile_local_id, tile_name);
+  }
+#endif
+  return sprite;
+}
+
+PGESprite* pge_spritesheet_create_sprite_gid(PGESpriteTableHandle handle, uint32_t tile_global_id, GPoint position) {
+  PGESprite *sprite = NULL;
+#ifdef PBL_PLATFORM_BASALT
+  PGESpriteTable *sprite_table = (PGESpriteTable *)handle;
+  PGESpriteTableEntry *table_entry = prv_find_table_entry_gid(handle, tile_global_id);
+  if (table_entry) {
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "Found table entry %ld %ld %ld", table_entry->tile_global_id, table_entry->tile_png_offset, table_entry->tile_png_size);
+    uint8_t *png_data = malloc(table_entry->tile_png_size);
+    uint32_t file_offset = sizeof(PGESpriteTableHeader) + sprite_table->header.table_entries_size + table_entry->tile_png_offset;
+    ResHandle rh = resource_get_handle(sprite_table->resource_id);
+    if (png_data && (resource_load_byte_range(rh, file_offset, (uint8_t*)png_data, table_entry->tile_png_size) == table_entry->tile_png_size)) {
+      //APP_LOG(APP_LOG_LEVEL_DEBUG, "Creating sprite gid: %ld, offset: %ld, size: %ld", table_entry->tile_global_id, table_entry->tile_png_offset, table_entry->tile_png_size);
+      sprite = pge_sprite_create_from_png_data(position, png_data, table_entry->tile_png_size);
+      free(png_data);
+    } else if (png_data) {
+      free(png_data);
+    }
+  } else {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to find table entry for global id %ld", tile_global_id);
   }
 #endif
   return sprite;
@@ -318,6 +364,30 @@ void pge_spritesheet_set_anim_frame(PGESprite *this, PGESpriteTableHandle handle
   // Find corresponding sprite table entry
   PGESpriteTable *sprite_table = (PGESpriteTable *)handle;
   PGESpriteTableEntry *table_entry = prv_find_table_entry(handle, tile_name, tile_local_id);
+  if (table_entry) {
+    // Load up PNG data and create GBitmap
+    uint8_t *png_data = malloc(table_entry->tile_png_size);
+    uint32_t file_offset = sizeof(PGESpriteTableHeader) + sprite_table->header.table_entries_size + table_entry->tile_png_offset;
+    ResHandle rh = resource_get_handle(sprite_table->resource_id);
+    if (png_data && resource_load_byte_range(rh, file_offset, (uint8_t*)png_data, table_entry->tile_png_size) == table_entry->tile_png_size) {
+      this->bitmap = gbitmap_create_from_png_data(png_data, table_entry->tile_png_size);
+      free(png_data);
+    } else if (png_data) {
+      free(png_data);
+    }
+  }
+#endif
+}
+
+void pge_spritesheet_set_anim_frame_gid(PGESprite *this, PGESpriteTableHandle handle, uint32_t tile_global_id) {
+#ifdef PBL_PLATFORM_BASALT
+  // Destroy existing bitmap
+  gbitmap_destroy(this->bitmap);
+  this->bitmap = NULL;
+
+  // Find corresponding sprite table entry
+  PGESpriteTable *sprite_table = (PGESpriteTable *)handle;
+  PGESpriteTableEntry *table_entry = prv_find_table_entry_gid(handle, tile_global_id);
   if (table_entry) {
     // Load up PNG data and create GBitmap
     uint8_t *png_data = malloc(table_entry->tile_png_size);

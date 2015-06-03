@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0">
+<map version="1.0" width="212" height="29" tilewidth="16" tileheight="16">
   <tileset firstgid="1" name="mario_large" tilewidth="16" tileheight="32">
     <tileoffset x="80" y="0"/>
     <image source="mariospritesheet_full.png" width="21" height="1"/>
@@ -28,4 +28,17 @@
     </properties>
     <image source="mariospritesheet_full.png" width="14" height="1"/>
   </tileset>
+  <tileset firstgid="120" name="mariotiles" tilewidth="16" tileheight="16">
+    <image source="mariotiles.png" width="33" height="10"/>
+  </tileset>
+  <tileset firstgid="700" name="cloud" tilewidth="48" tileheight="32">
+    <tileoffset x="0" y="320"/>
+    <image source="mariotiles.png" width="1" height="1"/>
+  </tileset>
+  <layer name="ground" width="30" height="2">
+    <data encoding="csv">
+      120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,
+      120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120
+    </data>
+  </layer>
 </map>

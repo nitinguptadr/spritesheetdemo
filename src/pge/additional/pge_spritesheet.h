@@ -1,7 +1,7 @@
 #pragma once
  
 #include <pebble.h>
-#include "pge/additional/pge_sprite.h"
+#include "pge_sprite.h"
 
 typedef uint32_t PGESpriteTableHandle;
 
@@ -101,6 +101,14 @@ uint32_t pge_spritesheet_get_num_sprites(PGESpriteSheet *spritesheet, uint32_t s
 //! @return Handle to be used to reference the sprite data table
 PGESpriteTableHandle pge_spritesheet_load_table(int resource_id);
 
+//! Create a sprite at a particular position using tileset name and local ID for a given sprite sheet
 PGESprite* pge_spritesheet_create_sprite(PGESpriteTableHandle handle, char *tile_name, uint32_t tile_local_id, GPoint position);
 
+//! Create a sprite at a particular position using the global ID for a given sprite sheet
+PGESprite* pge_spritesheet_create_sprite_gid(PGESpriteTableHandle handle, uint32_t tile_global_id, GPoint position);
+
+//! Set the image (PNG) for a given sprite using the given tileset name and local ID for a given sprite sheet
 void pge_spritesheet_set_anim_frame(PGESprite *this, PGESpriteTableHandle handle, char *tile_name, uint32_t tile_local_id);
+
+//! Set the image (PNG) for a given sprite using the given global ID for a given sprite sheet
+void pge_spritesheet_set_anim_frame_gid(PGESprite *this, PGESpriteTableHandle handle, uint32_t tile_global_id);
