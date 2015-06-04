@@ -12,21 +12,13 @@
     </properties>
     <image source="mariospritesheet_full.png" width="14" height="1"/>
   </tileset>
-  <tileset firstgid="36" name="mario_large2" tilewidth="16" tileheight="32">
+  <tileset firstgid="36" name="luigi_large" tilewidth="16" tileheight="32">
     <tileoffset x="80" y="48"/>
-    <properties>
-      <property name="xspacing" value="0"/>
-      <property name="yspacing" value="16"/>
-    </properties>
-    <image source="mariospritesheet_full.png" width="21" height="2"/>
-  </tileset>
-  <tileset firstgid="78" name="mario_small2" tilewidth="16" tileheight="16">
-    <tileoffset x="80" y="128"/>
     <properties>
       <property name="xspacing" value="0"/>
       <property name="yspacing" value="0"/>
     </properties>
-    <image source="mariospritesheet_full.png" width="14" height="1"/>
+    <image source="mariospritesheet_full.png" width="21" height="1"/>
   </tileset>
   <tileset firstgid="120" name="mariotiles" tilewidth="16" tileheight="16">
     <image source="mariotiles.png" width="33" height="10"/>
@@ -34,6 +26,10 @@
   <tileset firstgid="700" name="cloud" tilewidth="48" tileheight="32">
     <tileoffset x="0" y="320"/>
     <image source="mariotiles.png" width="1" height="1"/>
+  </tileset>
+  <tileset firstgid="701" name="pipe" tilewidth="32" tileheight="16">
+    <tileoffset x="0" y="128"/>
+    <image source="mariotiles.png" width="1" height="2"/>
   </tileset>
   <layer name="ground" width="30" height="2">
     <data encoding="csv">

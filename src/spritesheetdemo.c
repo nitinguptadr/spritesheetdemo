@@ -17,9 +17,13 @@ uint32_t s_mario_spritesets[NUM_MARIO_SPRITESETS];
 uint32_t s_num_sprites[NUM_MARIO_SPRITESETS];
 bool auto_increment = false;
 PGESprite* mario_large;
+PGESprite* luigi_large;
+PGESprite* current_sprite;
 PGESpriteTableHandle sth;
 uint32_t mario_index = 0;
 bool anim_forward = true;
+
+char tileset_name[20];
 
 PGESprite* bush1;
 PGESprite* bush2;
@@ -49,6 +53,7 @@ static void update_index(bool increment, uint32_t set_index) {
 }
 
 static int16_t ground_position = 16;
+#define GROUND_HEIGHT (168 - 32)
 
 typedef enum {
   JUMP_STATE_NONE,
@@ -58,8 +63,8 @@ typedef enum {
 } JumpState;
 
 static JumpState jump_state = JUMP_STATE_NONE;
-#define INITIAL_MARIO_POSITION (GPoint(40, 168-32-32))
-static GPoint mario_position = {40, 168-32-32};
+#define INITIAL_MARIO_POSITION (GPoint(40, GROUND_HEIGHT - 32))
+static GPoint mario_position = {40, GROUND_HEIGHT - 32};
 static GPoint bush_position;
 static GPoint cloud_position;
 static uint32_t top_count = 0;
@@ -123,8 +128,6 @@ void draw(GContext *ctx) {
     }
   }
 
-  pge_sprite_set_position(mario_large, mario_position);
-  pge_spritesheet_set_anim_frame(mario_large, sth, "mario_large", mario_index);
 
 #ifdef PBL_PLATFORM_BASALT
   graphics_context_set_fill_color(ctx, GColorVividCerulean);
@@ -155,9 +158,17 @@ void draw(GContext *ctx) {
   pge_sprite_set_position(cloud, draw_cloud_position);
   pge_sprite_draw(cloud, ctx);
 
-  pge_sprite_draw(mario_large, ctx);
+  if (current_sprite == mario_large) {
+    pge_sprite_set_position(mario_large, mario_position);
+    pge_spritesheet_set_anim_frame(mario_large, sth, "mario_large", mario_index);
+  } else {
+    pge_sprite_set_position(luigi_large, mario_position);
+    pge_spritesheet_set_anim_frame(luigi_large, sth, "luigi_large", mario_index);
+  }
+  pge_sprite_draw(current_sprite, ctx);
 
-  pge_tilesheet_draw_grid(ctx, s_tilesheet_handle, GRect(0, 0, s_tilesheet_size.w, s_tilesheet_size.h), GPoint((ground_position - 16), 168-32), GSize(16, 16));
+  pge_tilesheet_draw_grid(ctx, s_tilesheet_handle, GRect(0, 0, s_tilesheet_size.w, s_tilesheet_size.h),
+                          GPoint((ground_position - 16), GROUND_HEIGHT), GSize(16, 16));
 }
 
 // Optional, can be NULL if only using pge_get_button_state()
@@ -167,6 +178,13 @@ void click(int button_id, bool long_click) {
     jump_state = JUMP_STATE_UP;
     anim_forward = false;
   } else if (button_id == BUTTON_ID_DOWN) {
+    if (current_sprite == mario_large) {
+      current_sprite = luigi_large;
+      strncpy(tileset_name, "luigi_large", sizeof(tileset_name));
+    } else {
+      current_sprite = mario_large;
+      strncpy(tileset_name, "mario_large", sizeof(tileset_name));
+    }
   } else if (button_id == BUTTON_ID_SELECT) {
     auto_increment = !auto_increment;
   }
@@ -191,7 +209,9 @@ void pge_init() {
   }
   mario_index = 2;
   mario_large = pge_spritesheet_create_sprite(sth, "mario_large", mario_index, INITIAL_MARIO_POSITION);
+  luigi_large = pge_spritesheet_create_sprite(sth, "luigi_large", mario_index, INITIAL_MARIO_POSITION);
   anim_forward = true;
+  current_sprite = mario_large;
 
   bush_position = GPoint(80, INITIAL_MARIO_POSITION.y + 16);
   bush1 = pge_spritesheet_create_sprite(sth, "mariotiles", 9*33 + 14 - 2, bush_position);
